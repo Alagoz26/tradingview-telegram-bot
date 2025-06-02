@@ -1,0 +1,43 @@
+import json
+from flask import Flask, request
+import requests
+
+app = Flask(__name__)
+
+# Telegram bot bilgileri
+BOT_TOKEN = 'BURAYA_BOT_TOKENIN'
+CHAT_ID = 'BURAYA_CHAT_IDIN'
+
+TELEGRAM_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+
+@app.route('/', methods=['POST'])
+def tradingview_webhook():
+    data = request.get_json()
+
+    try:
+        signal = data.get("signal", "Sinyal yok")
+        symbol = data.get("symbol", "Bilinmeyen")
+        price = data.get("price", "0")
+
+        message = f"📈 TradingView Sinyali:\nSinyal: {signal}\nSembol: {symbol}\nFiyat: {price}"
+        payload = {
+            "chat_id": CHAT_ID,
+            "text": message
+        }
+
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        response = requests.post(TELEGRAM_URL, headers=headers, json=payload)
+
+        if response.status_code != 200:
+            raise Exception(f"Telegram API hatası: {response.text}")
+
+        return "OK", 200
+
+    except Exception as e:
+        return f"HATA: {e}", 400
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
